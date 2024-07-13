@@ -1,0 +1,114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cold Email Generator</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'app.css' %}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center" id="cold-email-title">Cold Email Generator</h2>
+        <form id="coldEmailForm" method="POST" onsubmit="sendDataToDjango(event)">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="personalInfo">Personal Information:</label>
+                <textarea class="form-control" id="personalInfo" rows="3" placeholder="Enter your personal information"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="resume">Resume (PDF):</label>
+                <label class="file-upload" for="resume">
+                    <i class="bi bi-file-earmark-pdf file-upload-icon"></i>
+                    <div class="file-upload-text">Click here or drag and drop a PDF file</div>
+                    <input type="file" class="form-control-file" id="resume" accept=".pdf" onchange="updateFileName(this)">
+                </label>
+            </div>
+            <div class="form-group">
+                <label for="jobDescription">Job Description (Optional):</label>
+                <textarea class="form-control" id="jobDescription" rows="3" placeholder="Enter the job description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="companyInfo">Company Information:</label>
+                <textarea class="form-control" id="companyInfo" rows="3" placeholder="Enter information about the company"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Generate Email</button>
+            <div class="text-center mt-3" style="display: none;" id="loadingSpinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+        
+        </form>
+        <hr>
+        <h4 class="text-center">Generated Email</h4>
+        <pre id="generatedEmail" class="border p-3"></pre>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"></script>
+    <script>
+        function updateFileName(input) {
+            const fileName = input.files[0].name;
+            document.querySelector('.file-upload-text').innerText = fileName;
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function sendDataToDjango(event) {
+            event.preventDefault();
+
+            const personalInfo = document.getElementById('personalInfo').value;
+            const jobDescription = document.getElementById('jobDescription').value;
+            const companyInfo = document.getElementById('companyInfo').value;
+
+            const csrftoken = getCookie('csrftoken');
+
+            // Show loading spinner
+            document.getElementById('loadingSpinner').style.display = 'block';
+
+            fetch("{% url 'generate_email' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: new URLSearchParams({
+                    personal_info: personalInfo,
+                    job_description: jobDescription,
+                    company_info: companyInfo,
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading spinner
+                document.getElementById('loadingSpinner').style.display = 'none';
+
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    document.getElementById('generatedEmail').textContent = data.email;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+    </script>
+</body>
+</html>
