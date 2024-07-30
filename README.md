@@ -46,4 +46,6 @@ The Cold Email Generator is a tool that leverages the power of Llama 3 to create
 
 ## Example
 Here’s a quick example of a generated cold email:
+
+
 https://github.com/user-attachments/assets/65362e07-dae3-4815-9f62-89fabc9b5792
